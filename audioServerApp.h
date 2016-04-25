@@ -28,22 +28,23 @@
 #include <audiodecoder/audiodecoder.h>
 
 
+const int BUFFER_SIZE = 100;
+
+const int TCP_BASE_PORT = 5000;
+
+
 class audioAppMainView : public QWidget
 {
     Q_OBJECT // Must be used in classes that define their own signals and slots
 private:
-
-    AudioDecoder *decoder;
-
     // VARS
-    bool playing = false;
-    QString soundFilePath;
-    int playbackPosition = 0;
-    bool fileSelected = false;
+    bool readyToPlay;
 
+    SAMPLE* samplesBuffer;
 
     // NETWORK
     NetworkInterface *networkInterface;
+    AudioSource *audioSource;
 
     // INTERFACE
     QLabel *titleLabel;
@@ -79,8 +80,11 @@ private:
 
 private slots:
 
-    void browseFiles();
     void loadSoundFile();
+
+
+    // BUTTON SLOTS
+    void browseFiles();
     void rewind();
     void togglePlayPause();
     void fastForward();
@@ -89,7 +93,10 @@ private slots:
     void increaseVolume();
     void maxVolume();
 
-    void sendAudioFileBuffer();
+
+    // NETWORK SLOTS
+    void sendControlData();
+    void sendStreamData();
 
 public:
     void initializeNetworkInterface(QHostAddress address, quint16 port);

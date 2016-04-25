@@ -28,13 +28,15 @@ audioAppMainView::audioAppMainView(QWidget *parent) : QWidget(parent)
 {
 
     // ================ INIT ===================
-    this->hostInputWindow = new HostInputWindow();
-    connect(this->hostInputWindow, &HostInputWindow::beginHosting, this, &audioAppMainView::initializeNetworkInterface);
-    this->hostInputWindow->setWindowModality(Qt::WindowModality::ApplicationModal);
-    this->hostInputWindow->show();
+//    this->hostInputWindow = new HostInputWindow();
+//    connect(this->hostInputWindow, &HostInputWindow::beginHosting, this, &audioAppMainView::initializeNetworkInterface);
+//    this->hostInputWindow->setWindowModality(Qt::WindowModality::ApplicationModal);
+//    this->hostInputWindow->show();
+    this->initializeNetworkInterface(QHostAddress::Any, TCP_BASE_PORT);
+    this->samplesBuffer = new SAMPLE[BUFFER_SIZE];
 
-
-    this->decoder = new AudioDecoder("");
+    this->audioSource = new AudioSource();
+    readyToPlay = false;
 
     // INTERFACE
 	titleLabel = new QLabel("Audio Server App");
@@ -108,6 +110,13 @@ audioAppMainView::audioAppMainView(QWidget *parent) : QWidget(parent)
     connect(this->volumeUpButton, SIGNAL(clicked()), this, SLOT(increaseVolume()));
     connect(this->maxVolumeButton, SIGNAL(clicked()), this, SLOT(maxVolume()));
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wincompatible-pointer-types"
+    connect(this->networkInterface, SIGNAL(sentStreamData()), this, SLOT(sendStreamData()));
+    connect(this->networkInterface, SIGNAL(sentStreamData()), this, SLOT(sendControlData()));
+#pragma clang diagnostic pop
+
+
 }
 
 void audioAppMainView::browseFiles()
@@ -115,23 +124,17 @@ void audioAppMainView::browseFiles()
     VLOG(2) << "Browse files pressed.";
 
     QString newSoundFilePath = this->soundFileBrowseDiaglog->getOpenFileName();
-    if (this->soundFilePath != newSoundFilePath)
+    if (!this->audioSource->setSoundFile(newSoundFilePath.toUtf8().constData()))
     {
-        this->soundFilePath = newSoundFilePath;
-        this->soundFileTextEdit->setText(this->soundFilePath);
-        this->fileSelected = true;
-        delete this->decoder;
-        this->decoder = new AudioDecoder(this->soundFilePath.toUtf8().constData());
-        this->decoder->open();
-        this->playbackPosition = 0;
+        readyToPlay = true;
 
-        VLOG(3) << "Audio file loaded:\n"
-                   << "Channels: " << this->decoder->channels() << "\n"
-                   << "Samples: " << this->decoder->numSamples() << "\n"
-                   << "Rate: " << this->decoder->sampleRate() << "\n";
+        this->soundFileTextEdit->setText(newSoundFilePath);
     }
-
-    this->soundProgressBar->setValue(this->playbackPosition);
+    else
+    {
+        this->soundFileTextEdit->setText("[FILE NOT VALID]");
+        readyToPlay = false;
+    }
 }
 
 void audioAppMainView::loadSoundFile()
@@ -147,8 +150,7 @@ void audioAppMainView::rewind()
 void audioAppMainView::togglePlayPause()
 {
     VLOG(2) << "Toggle play pause pressed.";
-
-    int samplesRead = this->decoder.read(10, static_cast<SAMPLE*>(1));
+    this->sendStreamData();
 }
 
 void audioAppMainView::fastForward()
@@ -180,12 +182,22 @@ void audioAppMainView::maxVolume()
 void audioAppMainView::initializeNetworkInterface(QHostAddress address, quint16 port)
 {
     LOG(DEBUG) << "Network interface init started.";
-    this->networkInterface = new NetworkInterface(this, address, port);
+    this->networkInterface = new NetworkInterface(address, port);
     LOG(DEBUG) << "Network interface started.";
 }
 
 
-void audioAppMainView::sendAudioFileBuffer()
+void audioAppMainView::sendStreamData()
+{
+    VLOG(4) << "Sending stream data.";
+//    int samplesCount = this->audioSource->getSamples(BUFFER_SIZE, this->samplesBuffer);
+//    this->networkInterface->sendStreamSamples(samplesCount, this->samplesBuffer);
+
+    int samplesCount = this->audioSource->getSamples(BUFFER_SIZE, this->samplesBuffer);
+    this->networkInterface->sendStreamSamples(samplesCount, this->samplesBuffer);
+}
+
+void audioAppMainView::sendControlData()
 {
 
 }
@@ -209,4 +221,3 @@ int main(int argc, char *argv[])
 
     return app.exec();
 }
-

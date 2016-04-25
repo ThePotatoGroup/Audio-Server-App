@@ -12,53 +12,39 @@
 #include "AudioSource.h"
 #include "easylogging++.h"
 
-class NetworkInterface : public QTcpServer
+class NetworkInterface : public QObject
 {
     Q_OBJECT
 
 public:
-    NetworkInterface(QObject *parent, QHostAddress address, quint16 port);
+    NetworkInterface(QHostAddress address, quint16 port);
 
-protected:
-    void incomingConnection(qintptr socketDescriptor) Q_DECL_OVERRIDE;
+    bool hasStreamConnection;
+    bool hasControlConnection;
 
-private:
-};
+    public slots:
 
+    void establishStreamSocket();
+    void establishControlSocket();
 
-
-class AudioStreamThread : public QThread
-{
-    Q_OBJECT
-
-public:
-    AudioStreamThread(int socketDescriptor, AudioSource &source, QObject *parent);
-
-    void run() Q_DECL_OVERRIDE;
-
-    signals:
-    void error(QTcpSocket::SocketError socketError);
-
-private:
-    int socketDescriptor;
-    AudioSource source;
-};
-
-class AudioControlThread : public QThread
-{
-Q_OBJECT
-
-public:
-    AudioControlThread(int socketDescriptor, const QString &fortune, QObject *parent);
-
-    void run() Q_DECL_OVERRIDE;
+    void sendStreamSamples(int samplesCount, SAMPLE* samplesBuffer);
 
 signals:
-    void error(QTcpSocket::SocketError socketError);
+
+    void sentStreamData();
+    void sentControlData();
+
+protected:
+    AudioSource* audioSource;
+
+    QTcpServer*streamServer;
+    QTcpServer*controlServer;
+
+    QTcpSocket* streamSocket;
+    QTcpSocket* controlSocket;
 
 private:
-    int socketDescriptor;
-    AudioSource source;
 };
+
 
 #endif //AUDIO_SERVER_APP_NETWORKINTERFACE_H
