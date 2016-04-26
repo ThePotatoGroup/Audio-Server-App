@@ -23,6 +23,9 @@ public:
     int setSoundFile(std::string path);
     int getSamples(int size, const SAMPLE* buffer); // Returns number of samples put in buffer
     int setPostion(int postion);
+    float getPercentDone();
+    int getPosition();
+
 
 };
 

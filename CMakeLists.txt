@@ -30,6 +30,7 @@ find_package(Qt5Multimedia)
 
 include_directories("easyloggingpp/src")
 include_directories("/usr/local/include")
+include_directories("Embedded-Audio-Shared")
 link_directories("/usr/local/lib")
 
 configure_file(easylogging++.conf easylogging++.conf COPYONLY)

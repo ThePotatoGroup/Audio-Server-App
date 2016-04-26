@@ -45,7 +45,26 @@ int AudioSource::getSamples(int size, const SAMPLE *buffer)
 
 int AudioSource::setPostion(int postion)
 {
-
-    this->decoder->seek(0);
+    if (postion > this->decoder->numSamples())
+    {
+        this->decoder->seek(this->decoder->numSamples());
+        return 1;
+    }
+    if (postion < 0)
+    {
+        this->decoder->seek(0);
+        return 2;
+    }
+    this->decoder->seek(postion);
     return 0; // TODO implement errors
+}
+
+float AudioSource::getPercentDone()
+{
+    return (float)this->decoder->positionInSamples()*100/(float)decoder->numSamples();
+}
+
+int AudioSource::getPosition()
+{
+    return this->decoder->positionInSamples();
 }

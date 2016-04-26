@@ -11,6 +11,7 @@
 #include <QThread>
 #include "AudioSource.h"
 #include "easylogging++.h"
+#include "EmbeddedAudioSharedTypes.h"
 
 class NetworkInterface : public QObject
 {
@@ -29,10 +30,17 @@ public:
 
     void sendStreamSamples(int samplesCount, SAMPLE* samplesBuffer);
 
+    void sendCommand(control_command_t command);
+
 signals:
 
     void sentStreamData();
     void sentControlData();
+
+    void streamSocketDisconnected();
+    void controlSocketDisconnected();
+
+    void connectionStatusChanged();
 
 protected:
     AudioSource* audioSource;

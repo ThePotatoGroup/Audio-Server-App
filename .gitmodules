@@ -1,3 +1,6 @@
 [submodule "easyloggingpp"]
 	path = easyloggingpp
 	url = https://github.com/easylogging/easyloggingpp.git
+[submodule "Embedded-Audio-Shared"]
+	path = Embedded-Audio-Shared
+	url = git@github.com:ThePotatoGroup/Embedded-Audio-Shared.git

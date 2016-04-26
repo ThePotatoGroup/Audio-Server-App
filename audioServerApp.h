@@ -39,6 +39,7 @@ class audioAppMainView : public QWidget
 private:
     // VARS
     bool readyToPlay;
+    unsigned int currentvVolumePercent;
 
     SAMPLE* samplesBuffer;
 
@@ -66,8 +67,22 @@ private:
     QPushButton *volumeUpButton;
     QPushButton *maxVolumeButton;
 
-    QLabel *connectionStatusLabel;
-    QPushButton *connectionStatusIndicator;
+    QLabel* streamConnectionStatusLabel;
+    QPushButton* streamConnectionStatusIndicator;
+    QLabel* controlConnectionStatusLabel;
+    QPushButton* controlConnectionStatusIndicator;
+
+
+    // IMAGES
+    QImage* playImage;
+    QImage* pauseImage;
+    QImage *rewindImage;
+    QImage *fastForwardImage;
+    QImage *muteImage;
+    QImage *volumeUpImage;
+    QImage *volumeDownImage;
+    QImage *maxVolumeImage;
+
 
     // LAYOUT
     QVBoxLayout *layout;
@@ -77,6 +92,10 @@ private:
     QHBoxLayout *connectionStatusLayout;
 
     HostInputWindow* hostInputWindow;
+
+
+    // METHODS
+    void setVolume(unsigned int volumePercent);
 
 private slots:
 
@@ -97,6 +116,8 @@ private slots:
     // NETWORK SLOTS
     void sendControlData();
     void sendStreamData();
+
+    void updateConnectionInidcators();
 
 public:
     void initializeNetworkInterface(QHostAddress address, quint16 port);

@@ -31,37 +31,48 @@ NetworkInterface::NetworkInterface(QHostAddress address, quint16 port)
 void NetworkInterface::establishStreamSocket()
 {
     VLOG(2) << "New stream socket request received.";
-    if (!this->hasStreamConnection)
+    if (this->hasStreamConnection)
     {
+        LOG(ERROR) << "WARNING: A new control connection request came in, but we are already connected.";
+    }
         this->streamSocket = this->streamServer->nextPendingConnection();
         connect(this->streamSocket, &QTcpSocket::bytesWritten, [=](){
                 VLOG(4) << "Stream socket bytesWritten signal received.";
                 emit this->sentStreamData();});
+
+        connect(this->streamSocket, &QTcpSocket::disconnected, [=](){
+            VLOG(2) << "Stream socket has been disconnected.";
+            this->hasStreamConnection = false;
+            emit this->connectionStatusChanged();
+            emit this->streamSocketDisconnected();});
+
         this->hasStreamConnection = true;
+    emit this->connectionStatusChanged();
         VLOG(2) << "Connected to stream socket.";
-    }
-    else
-    {
-        LOG(ERROR) << "ERROR: A new stream connection request came in, but we are already connected.";
-    }
 }
 
 void NetworkInterface::establishControlSocket()
 {
     VLOG(2) << "New control socket request received.";
-    if (!this->hasControlConnection)
+    if (this->hasControlConnection)
     {
+        LOG(ERROR) << "WARNING: A new control connection request came in, but we are already connected.";
+    }
         this->controlSocket = this->controlServer->nextPendingConnection();
         connect(this->controlSocket, &QTcpSocket::bytesWritten, [=](){
                     VLOG(4) << "Control socket bytesWritten signal received.";
                     emit this->sentControlData();});
+
+        connect(this->controlSocket, &QTcpSocket::disconnected, [=](){
+            VLOG(2) << "Control socket has been disconnected.";
+            this->hasControlConnection = false;
+            emit this->connectionStatusChanged();
+            emit this->controlSocketDisconnected();});
+
         this->hasControlConnection = true;
+    emit this->connectionStatusChanged();
         VLOG(2) << "Connected to control socket.";
-    }
-    else
-    {
-        LOG(ERROR) << "ERROR: A new control connection request came in, but we are already connected.";
-    }
+
 }
 
 
@@ -71,4 +82,14 @@ void NetworkInterface::sendStreamSamples(int samplesCount, SAMPLE* samplesBuffer
 
 }
 
+void NetworkInterface::sendCommand(control_command_t command)
+{
+    VLOG(2) << "Sending command to client.";
+
+    this->controlSocket->write((char*)&command, (qint64) sizeof(command));
+    this->controlSocket->flush();
+
+}
+
 #pragma clang diagnostic pop
+
